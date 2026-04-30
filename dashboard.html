@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 DASHBOARD</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#06060b;--bg2:#0d0d16;--bg3:#12121e;--bg4:#16162a;
+  --border:#1e1e32;--border2:#2a2a46;
+  --accent:#ff5500;--accent2:#ff8c00;
+  --gold:#ffc700;--green:#2ecc71;--red:#e74c3c;
+  --blue:#3a8fd4;--purple:#9b59b6;--cyan:#00d4ff;
+  --text:#e8e8f0;--muted:#6a6a8a;--muted2:#4a4a6a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+  pointer-events:none;z-index:9999}
+
+/* ── HEADER ─────────────────────────────────── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;height:58px;
+  position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:28px;height:28px}
+.logo h1{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;
+  letter-spacing:4px;text-transform:uppercase;color:#fff}
+.logo h1 span{color:var(--accent)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.live-pill{display:flex;align-items:center;gap:7px;padding:4px 12px;
+  border:1px solid var(--border);border-radius:20px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;
+  color:var(--muted);transition:all .3s}
+.live-pill.on{border-color:var(--green);color:var(--green);
+  background:rgba(46,204,113,.07);box-shadow:0 0 14px rgba(46,204,113,.15)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.live-pill.on .live-dot{background:var(--green);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sm{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;
+  padding:5px 12px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;letter-spacing:1px;transition:all .2s}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm.warn:hover{border-color:var(--red);color:var(--red)}
+.last-upd{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted2)}
+
+/* ── LIVE BANNER ─────────────────────────────── */
+#liveBanner{display:none;background:linear-gradient(90deg,rgba(46,204,113,.08),transparent);
+  border-bottom:1px solid rgba(46,204,113,.2);padding:10px 28px;
+  align-items:center;gap:32px}
+#liveBanner.show{display:flex}
+.lb-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--green)}
+.lb-stats{display:flex;gap:28px}
+.lb-s{text-align:center}
+.lb-sv{font-family:'Share Tech Mono',monospace;font-size:19px;color:var(--green);display:block}
+.lb-sl{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.lb-hp-wrap{display:flex;align-items:center;gap:10px}
+.lb-hp-bar{width:100px;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.lb-hp-fill{height:100%;background:var(--green);transition:width .4s}
+
+/* ── NAV ─────────────────────────────────────── */
+nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:0}
+.tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .2s;user-select:none;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── LAYOUT ──────────────────────────────────── */
+main{padding:24px 28px;max-width:1700px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+
+/* ── TITLES ──────────────────────────────────── */
+.stitle{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;
+  display:flex;align-items:center;gap:12px}
+.stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ── CARD ────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);padding:20px;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center}
+.card-title small{font-size:10px;font-weight:400;letter-spacing:0;color:var(--muted2)}
+
+/* ── KPI ─────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:20px}
+.kpi{background:var(--bg2);border:1px solid var(--border);padding:16px 14px;
+  position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:.2s}
+.kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
+.kpi:hover::before,.kpi.hl::before{opacity:1}
+.kpi.hl{border-color:rgba(255,85,0,.22);background:linear-gradient(135deg,rgba(255,85,0,.04),var(--bg2))}
+.kpi-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-weight:600}
+.kpi-val{font-family:'Share Tech Mono',monospace;font-size:28px;color:#fff;line-height:1;
+  transition:color .3s}
+.kpi.hl .kpi-val{color:var(--accent)}
+.kpi-sub{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-sub b{color:var(--text)}
+.kpi-ghost{position:absolute;right:8px;bottom:4px;font-family:'Share Tech Mono',monospace;
+  font-size:34px;opacity:.04;pointer-events:none}
+
+/* ── GRIDS ───────────────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
+
+/* ── INITIAL LOAD ANIMATIONS ─────────────────── */
+/* Only animate on .first-load — removed after first render */
+body.first-load .kpi{animation:fadeUp .35s ease both}
+body.first-load .kpi:nth-child(1){animation-delay:.04s}
+body.first-load .kpi:nth-child(2){animation-delay:.08s}
+body.first-load .kpi:nth-child(3){animation-delay:.12s}
+body.first-load .kpi:nth-child(4){animation-delay:.16s}
+body.first-load .kpi:nth-child(5){animation-delay:.20s}
+body.first-load .kpi:nth-child(6){animation-delay:.24s}
+body.first-load .kpi:nth-child(7){animation-delay:.28s}
+body.first-load .kpi:nth-child(8){animation-delay:.32s}
+body.first-load .card{animation:fadeUp .4s ease both}
+body.first-load .map-card{animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── FORM STRIP ──────────────────────────────── */
+.form-strip{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.form-pill{width:32px;height:32px;border-radius:3px;display:flex;align-items:center;
+  justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;
+  font-weight:700;cursor:default;position:relative;transition:transform .2s}
+.form-pill:hover{transform:scale(1.15)}
+.form-pill.W{background:rgba(46,204,113,.18);color:var(--green);border:1px solid rgba(46,204,113,.3)}
+.form-pill.L{background:rgba(231,76,60,.14);color:var(--red);border:1px solid rgba(231,76,60,.2)}
+.form-pill.T{background:rgba(100,100,160,.14);color:var(--muted);border:1px solid var(--border)}
+.form-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
+  color:var(--muted);margin-right:4px;text-transform:uppercase}
+
+/* ── STREAK ──────────────────────────────────── */
+.streak-box{display:flex;gap:12px}
+.streak-card{flex:1;background:var(--bg3);border:1px solid var(--border);padding:14px;text-align:center}
+.streak-val{font-family:'Share Tech Mono',monospace;font-size:30px;display:block;margin-bottom:4px}
+.streak-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted)}
+
+/* ── DONUT ───────────────────────────────────── */
+.donut-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.donut-center{position:absolute;text-align:center;pointer-events:none}
+.dc-val{font-family:'Share Tech Mono',monospace;font-size:22px;color:#fff}
+.dc-lbl{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.legend-list{display:flex;flex-direction:column}
+.leg-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 0;border-bottom:1px solid var(--border)}
+.leg-row:last-child{border-bottom:none}
+.leg-left{display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-val{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)}
+
+/* ── RECORDS ─────────────────────────────────── */
+.records-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.rec-card{background:var(--bg3);border:1px solid var(--border);padding:14px}
+.rec-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rec-val{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--gold)}
+.rec-map{font-size:11px;color:var(--muted);margin-top:4px;text-transform:capitalize}
+
+/* ── MULTIKILL ───────────────────────────────── */
+.mk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.mk-card{background:var(--bg3);border:1px solid var(--border);padding:14px;text-align:center;transition:border-color .2s}
+.mk-card:hover{border-color:var(--border2)}
+.mk-val{font-family:'Share Tech Mono',monospace;font-size:28px;display:block;margin-bottom:4px}
+.mk-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.mk-ico{font-size:18px;margin-bottom:6px;display:block}
+
+/* ── MAP CARDS ───────────────────────────────── */
+.maps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.map-card{background:var(--bg2);border:1px solid var(--border);padding:16px;transition:border-color .2s}
+.map-card:hover{border-color:var(--border2)}
+.map-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.map-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:#fff}
+.map-wr{font-family:'Share Tech Mono',monospace;font-size:20px}
+.map-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.map-bar-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.map-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.map-stat{text-align:center}
+.msv{font-family:'Share Tech Mono',monospace;font-size:13px;color:#fff;display:block}
+.msl{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.map-sides{display:flex;gap:6px;margin-top:8px}
+.side-tag{flex:1;text-align:center;padding:4px;border-radius:2px;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px}
+.ct-tag{background:rgba(58,143,212,.12);color:var(--blue);border:1px solid rgba(58,143,212,.2)}
+.t-tag{background:rgba(255,199,0,.08);color:var(--gold);border:1px solid rgba(255,199,0,.15)}
+
+/* ── TABLE ───────────────────────────────────── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:'Barlow Condensed',sans-serif}
+thead th{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(20,20,40,.9);transition:background .15s}
+tbody tr:hover{background:rgba(255,85,0,.025)}
+tbody td{padding:9px 12px;font-size:14px;color:var(--text);white-space:nowrap}
+.badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:2px;text-transform:uppercase}
+.bw{background:rgba(46,204,113,.1);color:var(--green);border:1px solid rgba(46,204,113,.22)}
+.bl{background:rgba(231,76,60,.09);color:var(--red);border:1px solid rgba(231,76,60,.18)}
+.bt{background:rgba(100,100,160,.1);color:var(--muted);border:1px solid var(--border)}
+.mono{font-family:'Share Tech Mono',monospace;font-size:12px}
+.kg{color:var(--green)}.kr{color:var(--red)}.kn{color:var(--text)}
+
+/* ── WEAPON BARS ─────────────────────────────── */
+.wpn-list{display:flex;flex-direction:column;gap:11px}
+.wpn-hdr{display:flex;justify-content:space-between;margin-bottom:4px}
+.wpn-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;text-transform:capitalize;color:var(--text)}
+.wpn-val{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)}
+.wpn-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;display:flex}
+.wpn-fill{height:100%;background:var(--accent);transition:width .8s}
+.wpn-hs{height:100%;background:var(--gold);opacity:.8;transition:width .8s}
+
+/* ── SIDES ───────────────────────────────────── */
+.side-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.side-card{padding:18px}
+.side-card.ct{background:linear-gradient(135deg,rgba(58,143,212,.05),var(--bg2));border:1px solid rgba(58,143,212,.18)}
+.side-card.t{background:linear-gradient(135deg,rgba(255,199,0,.04),var(--bg2));border:1px solid rgba(255,199,0,.12)}
+.side-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.side-card.ct .side-title{color:var(--blue)}
+.side-card.t  .side-title{color:var(--gold)}
+.side-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.side-stat{text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:2px}
+.ssv{font-family:'Share Tech Mono',monospace;font-size:20px;color:#fff;display:block}
+.ssl{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+
+/* ── ECO ─────────────────────────────────────── */
+.eco-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.eco-card{background:var(--bg3);border:1px solid var(--border);padding:14px;text-align:center}
+.eco-name{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-wr{font-family:'Share Tech Mono',monospace;font-size:24px;margin-bottom:4px}
+.eco-bar{height:3px;background:var(--border);border-radius:2px;margin:6px 0;overflow:hidden}
+.eco-fill{height:100%;border-radius:2px;transition:width .8s}
+.eco-sub{font-size:11px;color:var(--muted)}
+
+/* ── STEAM ID MANAGER ────────────────────────── */
+.sid-section{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:20px}
+.sid-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sid-desc{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.sid-desc a{color:var(--accent);text-decoration:none}
+.sid-desc a:hover{text-decoration:underline}
+.sid-add{display:flex;gap:10px;margin-bottom:16px}
+.sid-input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;
+  transition:border-color .2s}
+.sid-input:focus{border-color:var(--accent)}
+.sid-input::placeholder{color:var(--muted2)}
+.btn-add{background:var(--accent);border:none;color:#fff;cursor:pointer;
+  padding:8px 20px;font-family:'Barlow Condensed',sans-serif;font-size:13px;
+  font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:background .2s}
+.btn-add:hover{background:var(--accent2)}
+.sid-list{display:flex;flex-direction:column;gap:6px}
+.sid-row{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:var(--bg3);border:1px solid var(--border)}
+.sid-val{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text)}
+.sid-remove{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:16px;padding:0 4px;transition:color .2s;line-height:1}
+.sid-remove:hover{color:var(--red)}
+.sid-empty{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);
+  padding:12px;text-align:center;background:rgba(255,85,0,.04);
+  border:1px dashed rgba(255,85,0,.2)}
+.warn-box{background:rgba(255,85,0,.07);border:1px solid rgba(255,85,0,.25);
+  padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--accent2)}
+.warn-box b{color:var(--accent)}
+.ok-box{background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.2);
+  padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--green)}
+
+/* ── EMPTY ───────────────────────────────────── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px;color:var(--muted);text-align:center;gap:8px}
+.empty-ico{font-size:36px;opacity:.25}
+.empty-txt{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px}
+
+canvas{display:block}
+
+@media(max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:1fr 1fr}.eco-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.g2,.g21{grid-template-columns:1fr}.maps-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body class="first-load">
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none">
+      <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke="#ff5500" stroke-width="1.5"/>
+      <polygon points="14,7 21,11 21,17 14,21 7,17 7,11" fill="#ff5500" opacity=".2"/>
+      <circle cx="14" cy="14" r="3" fill="#ff5500"/>
+    </svg>
+    <h1>CS2 <span>STATS</span></h1>
+  </div>
+  <div class="hdr-right">
+    <div class="live-pill" id="livePill"><div class="live-dot"></div><span id="liveLabel">HORS JEU</span></div>
+    <button class="btn-sm" onclick="loadAll()">↻ REFRESH</button>
+    <span class="last-upd" id="lastUpd">—</span>
+  </div>
+</header>
+
+<!-- LIVE BANNER -->
+<div id="liveBanner">
+  <span class="lb-title">🔴 EN PARTIE</span>
+  <div class="lb-stats">
+    <div class="lb-s"><span class="lb-sv" id="lbRound">—</span><span class="lb-sl">Round</span></div>
+    <div class="lb-s"><span class="lb-sv" id="lbTeam">—</span><span class="lb-sl">Équipe</span></div>
+    <div class="lb-s"><span class="lb-sv" id="lbKills">—</span><span class="lb-sl">Kills</span></div>
+    <div class="lb-s"><span class="lb-sv" id="lbDeaths">—</span><span class="lb-sl">Morts</span></div>
+    <div class="lb-s"><span class="lb-sv" id="lbWeapon">—</span><span class="lb-sl">Arme</span></div>
+    <div class="lb-s"><span class="lb-sv" id="lbMoney">—</span><span class="lb-sl">$</span></div>
+    <div class="lb-hp-wrap">
+      <div class="lb-hp-bar"><div class="lb-hp-fill" id="lbHpBar"></div></div>
+      <span class="lb-sv" id="lbHp" style="font-size:14px">100</span>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="tab active" data-page="overview">Vue d'ensemble</div>
+  <div class="tab" data-page="matches">Historique</div>
+  <div class="tab" data-page="maps">Maps</div>
+  <div class="tab" data-page="weapons">Armes</div>
+  <div class="tab" data-page="sides">CT / T</div>
+  <div class="tab" data-page="economy">Économie</div>
+  <div class="tab" data-page="settings">⚙ Comptes</div>
+</nav>
+
+<main>
+
+<!-- ══ PAGE OVERVIEW ══════════════════════════════ -->
+<div class="page active" id="page-overview">
+  <div class="stitle">Statistiques globales</div>
+  <div class="kpi-grid">
+    <div class="kpi hl"><div class="kpi-lbl">K/D Ratio</div><div class="kpi-val" id="kKd">—</div><div class="kpi-sub"><b id="kKills">—</b>K · <b id="kDeaths">—</b>D</div><div class="kpi-ghost">KD</div></div>
+    <div class="kpi"><div class="kpi-lbl">Win Rate</div><div class="kpi-val" id="kWr">—</div><div class="kpi-sub"><b id="kW">—</b>V / <b id="kL">—</b>D / <b id="kT">—</b>N</div><div class="kpi-ghost">%</div></div>
+    <div class="kpi"><div class="kpi-lbl">HS %</div><div class="kpi-val" id="kHs">—</div><div class="kpi-sub"><b id="kHsK">—</b> headshots</div><div class="kpi-ghost">HS</div></div>
+    <div class="kpi"><div class="kpi-lbl">ADR</div><div class="kpi-val" id="kAdr">—</div><div class="kpi-sub">Dégâts / round</div><div class="kpi-ghost">DMG</div></div>
+    <div class="kpi"><div class="kpi-lbl">KPR</div><div class="kpi-val" id="kKpr">—</div><div class="kpi-sub">Kills / round</div><div class="kpi-ghost">K</div></div>
+    <div class="kpi"><div class="kpi-lbl">Survie rounds</div><div class="kpi-val" id="kSurv">—</div><div class="kpi-sub">% rounds survécus</div><div class="kpi-ghost">♥</div></div>
+    <div class="kpi"><div class="kpi-lbl">Temps matchs</div><div class="kpi-val" id="kTime">—</div><div class="kpi-sub"><b id="kMatches">—</b> matchs</div><div class="kpi-ghost">H</div></div>
+    <div class="kpi"><div class="kpi-lbl">Temps total CS2</div><div class="kpi-val" id="kSess">—</div><div class="kpi-sub">Toutes sessions</div><div class="kpi-ghost">∑</div></div>
+  </div>
+
+  <div class="stitle">Records personnels</div>
+  <div class="records-grid">
+    <div class="rec-card"><div class="rec-lbl">Meilleur K/D · 1 match</div><div class="rec-val" id="rKd">—</div><div class="rec-map" id="rKdMap">—</div></div>
+    <div class="rec-card"><div class="rec-lbl">Meilleur ADR · 1 match</div><div class="rec-val" id="rAdr">—</div><div class="rec-map" id="rAdrMap">—</div></div>
+    <div class="rec-card"><div class="rec-lbl">K/D côté CT</div><div class="rec-val" id="rCtKd">—</div><div class="rec-map">Performance CT</div></div>
+    <div class="rec-card"><div class="rec-lbl">K/D côté T</div><div class="rec-val" id="rTKd">—</div><div class="rec-map">Performance T</div></div>
+  </div>
+
+  <div class="g21">
+    <div class="card">
+      <div class="card-title">Forme récente <small>15 derniers matchs — gauche = plus récent</small></div>
+      <div class="form-strip" id="formStrip"><span class="form-lbl">Chargement…</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Séries</div>
+      <div class="streak-box">
+        <div class="streak-card"><span class="streak-val" id="srkCur">—</span><span class="streak-lbl" id="srkType">Série actuelle</span></div>
+        <div class="streak-card"><span class="streak-val" id="srkBW" style="color:var(--green)">—</span><span class="streak-lbl">Record victoires</span></div>
+        <div class="streak-card"><span class="streak-val" id="srkBL" style="color:var(--red)">—</span><span class="streak-lbl">Record défaites</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g21">
+    <div class="card"><div class="card-title">Évolution K/D <small>50 dernières parties · couleur = résultat</small></div><canvas id="cKd" height="200"></canvas></div>
+    <div class="card">
+      <div class="card-title">Résultats</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+        <div class="donut-wrap"><canvas id="cDonut" width="170" height="170"></canvas>
+          <div class="donut-center"><span class="dc-val" id="donutWr">—</span><span class="dc-lbl">Win Rate</span></div>
+        </div>
+        <div class="legend-list" id="donutLeg" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card"><div class="card-title">ADR par partie <small>orange > 60 · rouge > 80</small></div><canvas id="cAdr" height="180"></canvas></div>
+    <div class="card"><div class="card-title">HS% par partie</div><canvas id="cHs" height="180"></canvas></div>
+  </div>
+
+  <div class="stitle">Multi-kills</div>
+  <div class="mk-grid">
+    <div class="mk-card"><span class="mk-ico">🎯</span><span class="mk-val" id="mk1" style="color:var(--muted)">—</span><span class="mk-lbl">1K Entry</span></div>
+    <div class="mk-card"><span class="mk-ico">⚡</span><span class="mk-val" id="mk2" style="color:var(--blue)">—</span><span class="mk-lbl">Double</span></div>
+    <div class="mk-card"><span class="mk-ico">💥</span><span class="mk-val" id="mk3" style="color:var(--accent2)">—</span><span class="mk-lbl">Triple</span></div>
+    <div class="mk-card"><span class="mk-ico">🔥</span><span class="mk-val" id="mk4" style="color:var(--accent)">—</span><span class="mk-lbl">Quadruple</span></div>
+    <div class="mk-card"><span class="mk-ico">👑</span><span class="mk-val" id="mk5" style="color:var(--gold)">—</span><span class="mk-lbl">ACE</span></div>
+  </div>
+</div>
+
+<!-- ══ PAGE MATCHES ════════════════════════════════ -->
+<div class="page" id="page-matches">
+  <div class="stitle">Historique des parties</div>
+  <div class="card" style="padding:0">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Résultat</th><th>Map</th><th>Mode</th><th>Score</th>
+          <th>K</th><th>D</th><th>A</th><th>K/D</th>
+          <th>HS%</th><th>ADR</th><th>MVPs</th><th>Durée</th><th>Date</th>
+        </tr></thead>
+        <tbody id="tbodyMatches">
+          <tr><td colspan="13"><div class="empty"><span class="empty-ico">📋</span><span class="empty-txt">Lance CS2 pour commencer l'enregistrement</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE MAPS ═══════════════════════════════════ -->
+<div class="page" id="page-maps">
+  <div class="stitle">Performances par map</div>
+  <div id="mapsGrid" class="maps-grid">
+    <div class="empty"><span class="empty-ico">🗺</span><span class="empty-txt">Aucune partie enregistrée</span></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-title">Win rate par map</div><canvas id="cMapWr" height="250"></canvas></div>
+    <div class="card"><div class="card-title">K/D moyen par map</div><canvas id="cMapKd" height="250"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ PAGE WEAPONS ════════════════════════════════ -->
+<div class="page" id="page-weapons">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Kills par arme <small>orange = kills · or = headshots</small></div>
+      <div id="wpnList" class="wpn-list"><div class="empty"><span class="empty-ico">🔫</span><span class="empty-txt">—</span></div></div>
+    </div>
+    <div class="card"><div class="card-title">Répartition kills</div><canvas id="cWpnPie" height="300"></canvas></div>
+  </div>
+  <div class="card"><div class="card-title">HS% par arme</div><canvas id="cWpnHs" height="200"></canvas></div>
+</div>
+
+<!-- ══ PAGE SIDES ══════════════════════════════════ -->
+<div class="page" id="page-sides">
+  <div class="stitle">Comparaison CT vs T</div>
+  <div class="side-compare">
+    <div class="side-card ct">
+      <div class="side-title">⚔ Counter-Terrorist</div>
+      <div class="side-stats">
+        <div class="side-stat"><span class="ssv" id="sCtKd">—</span><span class="ssl">K/D</span></div>
+        <div class="side-stat"><span class="ssv" id="sCtWr">—</span><span class="ssl">Win rate rounds</span></div>
+        <div class="side-stat"><span class="ssv" id="sCtAdr">—</span><span class="ssl">ADR</span></div>
+        <div class="side-stat"><span class="ssv" id="sCtSurv">—</span><span class="ssl">Survie</span></div>
+      </div>
+    </div>
+    <div class="side-card t">
+      <div class="side-title">💣 Terrorist</div>
+      <div class="side-stats">
+        <div class="side-stat"><span class="ssv" id="sTKd">—</span><span class="ssl">K/D</span></div>
+        <div class="side-stat"><span class="ssv" id="sTWr">—</span><span class="ssl">Win rate rounds</span></div>
+        <div class="side-stat"><span class="ssv" id="sTAdr">—</span><span class="ssl">ADR</span></div>
+        <div class="side-stat"><span class="ssv" id="sTSurv">—</span><span class="ssl">Survie</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-title">K/D CT vs T</div><canvas id="cSideKd" height="220"></canvas></div>
+    <div class="card"><div class="card-title">Round win rate CT vs T</div><canvas id="cSideWr" height="220"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ PAGE ECONOMY ════════════════════════════════ -->
+<div class="page" id="page-economy">
+  <div class="stitle">Analyse économique</div>
+  <div class="eco-grid" id="ecoGrid"><div class="empty"><span class="empty-ico">💰</span><span class="empty-txt">—</span></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-title">Win rate par type d'achat</div><canvas id="cEcoWr" height="220"></canvas></div>
+    <div class="card"><div class="card-title">ADR moyen par type d'achat</div><canvas id="cEcoAdr" height="220"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ PAGE SETTINGS ═══════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="stitle">Gestion des comptes Steam</div>
+
+  <div class="sid-section">
+    <div class="sid-title">Steam IDs autorisés</div>
+    <div class="sid-desc">
+      Le dashboard n'enregistre que les parties des Steam IDs listés ici. Ça évite que les données d'un joueur spectateur soient enregistrées.<br>
+      <b>Liste vide = tout le monde est accepté</b> (mode setup, à éviter en jeu).<br><br>
+      Trouve ton Steam ID sur <a href="https://www.steamidfinder.com" target="_blank">steamidfinder.com</a> ou dans CS2 → <code>status</code> dans la console.
+    </div>
+
+    <div id="sidWarn" class="warn-box" style="display:none">
+      ⚠ <b>Liste vide :</b> toutes les données GSI sont acceptées, y compris celles des spectateurs. Ajoute au moins un Steam ID.
+    </div>
+    <div id="sidOk" class="ok-box" style="display:none">
+      ✓ Filtrage actif — seuls les Steam IDs listés sont enregistrés.
+    </div>
+
+    <div class="sid-add">
+      <input class="sid-input" id="sidInput" type="text" placeholder="76561198XXXXXXXXX" maxlength="25">
+      <button class="btn-add" onclick="addSteamId()">+ Ajouter</button>
+    </div>
+    <div id="sidList" class="sid-list">
+      <div class="sid-empty">Aucun Steam ID configuré — toutes les données sont acceptées</div>
+    </div>
+  </div>
+
+  <div class="sid-section">
+    <div class="sid-title">Comment trouver son Steam ID</div>
+    <div class="sid-desc">
+      <b>Méthode 1 :</b> Lance CS2 → ouvre la console → tape <code>status</code> → cherche la ligne avec ton pseudo, le Steam ID est au format <code>76561198XXXXXXXXX</code><br><br>
+      <b>Méthode 2 :</b> Va sur <a href="https://www.steamidfinder.com" target="_blank">steamidfinder.com</a> et entre ton pseudo Steam.<br><br>
+      <b>Méthode 3 :</b> Dans Steam → clic droit sur ton profil → Copier l'URL du profil → colle sur steamidfinder.com.<br><br>
+      Tu peux ajouter autant de comptes que tu veux.
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── Utils ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n||0).toLocaleString('fr');
+function fmtTime(s){if(!s)return'0h';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h${m>0?m+'m':''}`:`${m}m`}
+function fmtDate(ts){if(!ts)return'—';const d=new Date(ts*1000);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+function shortMap(n){return(n||'').replace('de_','').replace('cs_','')}
+function capMap(n){const s=shortMap(n);return s.charAt(0).toUpperCase()+s.slice(1)}
+function cap(s){return(s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+function kdCls(k){return k>=1.3?'kg':k<0.9?'kr':'kn'}
+function wr2col(p){return p>=60?'#2ecc71':p>=45?'#ff8c00':'#e74c3c'}
+
+// ── Chart defaults ─────────────────────────────────────────────────────────
+const TT = {backgroundColor:'#1a1a2e',borderColor:'#ff5500',borderWidth:1,
+  titleColor:'#e8e8f0',bodyColor:'#6a6a8a',
+  titleFont:{family:'Barlow Condensed',size:13},bodyFont:{family:'Share Tech Mono',size:12}};
+const SC = {
+  x:{grid:{color:'#1a1a2e'},ticks:{color:'#6a6a8a',font:{family:'Share Tech Mono',size:10}}},
+  y:{grid:{color:'#1a1a2e'},ticks:{color:'#6a6a8a',font:{family:'Share Tech Mono',size:10}}}
+};
+const CH = {};
+function mkChart(id,cfg){if(CH[id])CH[id].destroy();CH[id]=new Chart($(id),cfg)}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('page-'+t.dataset.page).classList.add('active');
+  });
+});
+
+// ── Animation: disable after first render ──────────────────────────────────
+let firstLoad = true;
+function disableAnimations(){
+  if(!firstLoad)return;
+  setTimeout(()=>document.body.classList.remove('first-load'), 600);
+  firstLoad = false;
+}
+
+// ── Live (fast poll, no re-render) ─────────────────────────────────────────
+async function loadLive(){
+  try{
+    const d=await fetch('/api/live').then(r=>r.json());
+    const pill=$('livePill'),banner=$('liveBanner');
+    if(d.in_game){
+      pill.className='live-pill on';$('liveLabel').textContent='EN PARTIE';
+      banner.classList.add('show');
+      $('lbRound').textContent=d.round||'—';
+      $('lbTeam').textContent=d.player_team||'—';
+      $('lbKills').textContent=d.kills??'—';
+      $('lbDeaths').textContent=d.deaths??'—';
+      $('lbWeapon').textContent=cap(d.active_weapon)||'—';
+      $('lbMoney').textContent=d.money?'$'+fmt(d.money):'—';
+      const hp=d.health??100;
+      $('lbHp').textContent=hp;
+      $('lbHpBar').style.width=hp+'%';
+      $('lbHpBar').style.background=hp>50?'#2ecc71':hp>25?'#ff8c00':'#e74c3c';
+    }else{
+      pill.className='live-pill';$('liveLabel').textContent='HORS JEU';
+      banner.classList.remove('show');
+    }
+  }catch{}
+}
+
+// ── Stats (KPIs only — update text, no DOM rebuild) ────────────────────────
+async function loadStats(){
+  try{
+    const d=await fetch('/api/stats').then(r=>r.json());
+    $('kKd').textContent=d.kd??'—';
+    $('kKills').textContent=fmt(d.total_kills);
+    $('kDeaths').textContent=fmt(d.total_deaths);
+    $('kWr').textContent=(d.win_rate??'—')+'%';
+    $('kW').textContent=d.wins??'—';$('kL').textContent=d.losses??'—';$('kT').textContent=d.ties??'—';
+    $('kHs').textContent=(d.hs_pct??'—')+'%';$('kHsK').textContent=fmt(d.total_hs);
+    $('kAdr').textContent=d.adr??'—';
+    $('kKpr').textContent=d.kpr??'—';
+    $('kSurv').textContent=(d.survival_rate??'—')+'%';
+    $('kTime').textContent=fmtTime(d.match_time);
+    $('kMatches').textContent=d.total_matches??'—';
+    $('kSess').textContent=fmtTime(d.session_time);
+    $('rKd').textContent=d.best_kd??'—';$('rKdMap').textContent=capMap(d.best_kd_map||'');
+    $('rAdr').textContent=d.best_adr??'—';$('rAdrMap').textContent=capMap(d.best_adr_map||'');
+    $('rCtKd').textContent=d.ct_kd??'—';$('rTKd').textContent=d.t_kd??'—';
+
+    const[w,l,t]=[d.wins||0,d.losses||0,d.ties||0];
+    $('donutWr').textContent=(d.win_rate??'—')+'%';
+    mkChart('cDonut',{type:'doughnut',data:{
+      labels:['Victoires','Défaites','Égalités'],
+      datasets:[{data:[w,l,t],
+        backgroundColor:['rgba(46,204,113,.65)','rgba(231,76,60,.65)','rgba(100,100,160,.5)'],
+        borderColor:['#2ecc71','#e74c3c','#6464a0'],borderWidth:1,hoverOffset:4}]
+    },options:{cutout:'70%',animation:{animateScale:firstLoad},
+      plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}}}});
+    const cols=['#2ecc71','#e74c3c','#6464a0'];
+    $('donutLeg').innerHTML=['Victoires','Défaites','Égalités'].map((lbl,i)=>`
+      <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:${cols[i]}"></div>${lbl}</div>
+      <span class="leg-val">${[w,l,t][i]}</span></div>`).join('');
+  }catch(e){console.error(e)}
+}
+
+// ── Performance charts ─────────────────────────────────────────────────────
+async function loadPerf(){
+  try{
+    const data=await fetch('/api/performance').then(r=>r.json());
+    if(!data.length)return;
+    const lbls=data.map((m,i)=>shortMap(m.map_name)||`#${i+1}`);
+    const kds=data.map(m=>+m.kd||0);
+    const adrs=data.map(m=>+m.adr||0);
+    const hsp=data.map(m=>+m.hs_pct||0);
+    const ptClrs=data.map(m=>m.result==='win'?'#2ecc71':m.result==='loss'?'#e74c3c':'#6464a0');
+    const avg=a=>a.reduce((x,y)=>x+y,0)/a.length||0;
+    const noAnim={duration:0};
+
+    mkChart('cKd',{type:'line',data:{labels:lbls,datasets:[
+      {label:'K/D',data:kds,borderColor:'#ff5500',backgroundColor:'rgba(255,85,0,.07)',
+       pointBackgroundColor:ptClrs,pointBorderColor:ptClrs,pointRadius:5,pointHoverRadius:7,
+       tension:.35,fill:true,borderWidth:2},
+      {label:'Moyenne',data:new Array(kds.length).fill(+avg(kds).toFixed(2)),
+       borderColor:'rgba(255,199,0,.35)',borderDash:[6,4],borderWidth:1,pointRadius:0,fill:false}
+    ]},options:{animation:firstLoad?{}:noAnim,plugins:{...{legend:{display:true,
+      labels:{color:'#6a6a8a',font:{family:'Barlow Condensed',size:12},boxWidth:14}}},tooltip:TT},
+      scales:{x:{...SC.x,ticks:{...SC.x.ticks,maxTicksLimit:14,maxRotation:45}},y:{...SC.y,min:0}},
+      interaction:{mode:'index',intersect:false}}});
+
+    mkChart('cAdr',{type:'bar',data:{labels:lbls,datasets:[{label:'ADR',data:adrs,
+      backgroundColor:adrs.map(v=>v>=80?'rgba(231,76,60,.7)':v>=60?'rgba(255,140,0,.6)':'rgba(255,85,0,.25)'),
+      borderRadius:2,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x,ticks:{...SC.x.ticks,maxTicksLimit:12,maxRotation:45}},y:{...SC.y,min:0}}}});
+
+    mkChart('cHs',{type:'line',data:{labels:lbls,datasets:[{label:'HS%',data:hsp,
+      borderColor:'#ffc700',backgroundColor:'rgba(255,199,0,.06)',pointBackgroundColor:'#ffc700',
+      pointRadius:4,tension:.35,fill:true,borderWidth:2}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x,ticks:{...SC.x.ticks,maxTicksLimit:12,maxRotation:45}},y:{...SC.y,min:0,max:100}}}});
+  }catch(e){console.error(e)}
+}
+
+// ── Form + Streaks ─────────────────────────────────────────────────────────
+async function loadForm(){
+  try{
+    const data=await fetch('/api/form').then(r=>r.json());
+    const el=$('formStrip');
+    if(!data.length){el.innerHTML='<span class="form-lbl">Aucune partie</span>';return}
+    el.innerHTML='<span class="form-lbl">Forme :</span>'+
+      data.map(m=>{
+        const r=m.result==='win'?'W':m.result==='loss'?'L':'T';
+        return`<div class="form-pill ${r}" title="${capMap(m.map_name)} · K/D: ${m.kd}">${r}</div>`;
+      }).join('');
+  }catch{}
+}
+async function loadStreaks(){
+  try{
+    const d=await fetch('/api/streaks').then(r=>r.json());
+    $('srkCur').textContent=d.current??'—';
+    $('srkCur').style.color=d.type==='win'?'#2ecc71':d.type==='loss'?'#e74c3c':'#fff';
+    $('srkType').textContent=d.type==='win'?'Série de victoires':d.type==='loss'?'Série de défaites':'Série actuelle';
+    $('srkBW').textContent=d.best_win??'—';$('srkBL').textContent=d.best_loss??'—';
+  }catch{}
+}
+async function loadMultikills(){
+  try{
+    const d=await fetch('/api/multikills').then(r=>r.json());
+    $('mk1').textContent=fmt(d.k1);$('mk2').textContent=fmt(d.k2);
+    $('mk3').textContent=fmt(d.k3);$('mk4').textContent=fmt(d.k4);
+    $('mk5').textContent=fmt(d.ace);
+  }catch{}
+}
+
+// ── Matches table ──────────────────────────────────────────────────────────
+async function loadMatches(){
+  try{
+    const data=await fetch('/api/matches?limit=50').then(r=>r.json());
+    const tbody=$('tbodyMatches');
+    if(!data.length)return;
+    tbody.innerHTML=data.map(m=>{
+      const kd=m.deaths>0?(m.kills/m.deaths).toFixed(2):m.kills;
+      const hp=m.kills>0?Math.round(m.hs_kills/m.kills*100):0;
+      const adr=m.rounds_played>0&&m.total_damage>0?Math.round(m.total_damage/m.rounds_played):0;
+      const badge=m.result==='win'?'bw':m.result==='loss'?'bl':'bt';
+      const rlbl=m.result==='win'?'V':m.result==='loss'?'D':'N';
+      return`<tr>
+        <td><span class="badge ${badge}">${rlbl}</span></td>
+        <td><b>${capMap(m.map_name)}</b></td>
+        <td style="color:var(--muted)">${cap(m.mode)||'—'}</td>
+        <td class="mono">${m.ct_score}-${m.t_score}</td>
+        <td class="mono kg">${m.kills}</td>
+        <td class="mono kr">${m.deaths}</td>
+        <td class="mono" style="color:var(--muted)">${m.assists}</td>
+        <td class="mono ${kdCls(+kd)}">${kd}</td>
+        <td class="mono">${hp}%</td>
+        <td class="mono">${adr||'—'}</td>
+        <td class="mono" style="color:var(--gold)">${m.mvps}</td>
+        <td style="color:var(--muted)">${fmtTime(m.duration)}</td>
+        <td style="color:var(--muted2);font-size:11px">${fmtDate(m.start_time)}</td>
+      </tr>`;
+    }).join('');
+  }catch{}
+}
+
+// ── Maps ───────────────────────────────────────────────────────────────────
+async function loadMaps(){
+  try{
+    const data=await fetch('/api/maps').then(r=>r.json());
+    if(!data.length)return;
+    const grid=$('mapsGrid');
+    grid.innerHTML=data.map(m=>{
+      const wr=m.played?Math.round(m.wins/m.played*100):0;
+      const col=wr2col(wr);
+      const tot=m.ct_rw+m.t_rw||1;
+      const ctP=Math.round(m.ct_rw/tot*100), tP=100-ctP;
+      return`<div class="map-card">
+        <div class="map-hdr">
+          <div><div class="map-name">${shortMap(m.map_name).toUpperCase()}</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px">${m.played} parties · ${fmtTime(m.total_time)}</div>
+          </div>
+          <div class="map-wr" style="color:${col}">${wr}%</div>
+        </div>
+        <div class="map-bar"><div class="map-bar-fill" style="width:${wr}%;background:${col}"></div></div>
+        <div class="map-row">
+          <div class="map-stat"><span class="msv">${m.wins}</span><span class="msl">V</span></div>
+          <div class="map-stat"><span class="msv">${m.losses}</span><span class="msl">D</span></div>
+          <div class="map-stat"><span class="msv">${(m.avg_kd||0).toFixed(2)}</span><span class="msl">K/D</span></div>
+          <div class="map-stat"><span class="msv">${Math.round(m.avg_adr||0)||'—'}</span><span class="msl">ADR</span></div>
+        </div>
+        <div class="map-sides">
+          <div class="side-tag ct-tag">CT ${ctP}%</div>
+          <div class="side-tag t-tag">T ${tP}%</div>
+        </div>
+      </div>`;
+    }).join('');
+    const noAnim={duration:0};
+    const names=data.map(m=>shortMap(m.map_name));
+    const wrs=data.map(m=>m.played?Math.round(m.wins/m.played*100):0);
+    const akds=data.map(m=>+(m.avg_kd||0).toFixed(2));
+    mkChart('cMapWr',{type:'bar',data:{labels:names,datasets:[{label:'Win%',data:wrs,
+      backgroundColor:wrs.map(w=>wr2col(w)+'99'),borderRadius:3,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x,min:0,max:100},y:{...SC.y}}}});
+    mkChart('cMapKd',{type:'bar',data:{labels:names,datasets:[{label:'K/D',data:akds,
+      backgroundColor:akds.map(k=>k>=1.3?'rgba(46,204,113,.6)':k<0.9?'rgba(231,76,60,.5)':'rgba(255,85,0,.5)'),
+      borderRadius:3,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x,min:0},y:{...SC.y}}}});
+  }catch{}
+}
+
+// ── Weapons ────────────────────────────────────────────────────────────────
+async function loadWeapons(){
+  try{
+    const data=await fetch('/api/weapons').then(r=>r.json());
+    if(!data.length)return;
+    const maxK=data[0]?.total_kills||1;
+    const top=data.slice(0,12);
+    $('wpnList').innerHTML=top.map(w=>{
+      const hsp=w.total_kills>0?w.total_hs/w.total_kills:0;
+      const fw=Math.round(w.total_kills/maxK*100);
+      return`<div>
+        <div class="wpn-hdr"><span class="wpn-name">${cap(w.weapon_name)}</span>
+          <span class="wpn-val">${w.total_kills}K · ${Math.round(hsp*100)}%HS</span></div>
+        <div class="wpn-track">
+          <div class="wpn-fill" style="width:${fw*(1-hsp)}%"></div>
+          <div class="wpn-hs" style="width:${fw*hsp}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+    const noAnim={duration:0};
+    const pieColors=['#ff5500','#ff8c00','#ffc700','#2ecc71','#3a8fd4','#9b59b6','#00d4ff','#e74c3c'];
+    const top8=data.slice(0,8);
+    mkChart('cWpnPie',{type:'doughnut',data:{
+      labels:top8.map(w=>cap(w.weapon_name)),
+      datasets:[{data:top8.map(w=>w.total_kills),
+        backgroundColor:pieColors.map(c=>c+'aa'),borderColor:pieColors,borderWidth:1}]
+    },options:{animation:firstLoad?{}:noAnim,cutout:'45%',plugins:{
+      legend:{display:true,position:'right',labels:{color:'#6a6a8a',font:{family:'Barlow Condensed',size:12},boxWidth:12}},
+      tooltip:TT}}});
+    const withHs=data.filter(w=>w.total_kills>0).slice(0,10);
+    const hsP=withHs.map(w=>Math.round(w.total_hs/w.total_kills*100));
+    mkChart('cWpnHs',{type:'bar',data:{labels:withHs.map(w=>cap(w.weapon_name)),
+      datasets:[{label:'HS%',data:hsP,
+        backgroundColor:hsP.map(p=>p>=50?'rgba(255,199,0,.75)':p>=30?'rgba(255,140,0,.6)':'rgba(255,85,0,.4)'),
+        borderRadius:3,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x},y:{...SC.y,min:0,max:100}}}});
+  }catch{}
+}
+
+// ── Sides ──────────────────────────────────────────────────────────────────
+async function loadSides(){
+  try{
+    const d=await fetch('/api/sides').then(r=>r.json());
+    $('sCtKd').textContent=d.ct_kd??'—';$('sCtWr').textContent=(d.ct_wr??'—')+'%';
+    $('sCtAdr').textContent=d.ct_adr??'—';$('sCtSurv').textContent=(d.ct_surv_rate??'—')+'%';
+    $('sTKd').textContent=d.t_kd??'—';$('sTWr').textContent=(d.t_wr??'—')+'%';
+    $('sTAdr').textContent=d.t_adr??'—';$('sTSurv').textContent=(d.t_surv_rate??'—')+'%';
+    const noAnim={duration:0};
+    mkChart('cSideKd',{type:'bar',data:{labels:['CT','T'],datasets:[{
+      data:[d.ct_kd||0,d.t_kd||0],
+      backgroundColor:['rgba(58,143,212,.6)','rgba(255,199,0,.55)'],
+      borderColor:['#3a8fd4','#ffc700'],borderWidth:1,borderRadius:4}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x},y:{...SC.y,min:0,suggestedMax:2}}}});
+    mkChart('cSideWr',{type:'bar',data:{labels:['CT','T'],datasets:[{
+      data:[d.ct_wr||0,d.t_wr||0],
+      backgroundColor:['rgba(58,143,212,.6)','rgba(255,199,0,.55)'],
+      borderColor:['#3a8fd4','#ffc700'],borderWidth:1,borderRadius:4}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x},y:{...SC.y,min:0,max:100}}}});
+  }catch{}
+}
+
+// ── Economy ────────────────────────────────────────────────────────────────
+async function loadEconomy(){
+  try{
+    const data=await fetch('/api/economy').then(r=>r.json());
+    if(!data.length)return;
+    const ORDER=['pistol','eco','force','semi','full'];
+    const LABELS={pistol:'Pistolet',eco:'Éco',force:'Force',semi:'Semi',full:'Full buy'};
+    const COLS={pistol:'#6464a0',eco:'#e74c3c',force:'#ff8c00',semi:'#ffc700',full:'#2ecc71'};
+    const sorted=ORDER.map(k=>data.find(d=>d.eco_type===k)).filter(Boolean);
+    $('ecoGrid').innerHTML=sorted.map(r=>{
+      const wr=r.rounds?Math.round(r.wins/r.rounds*100):0;
+      const col=COLS[r.eco_type]||'#999';
+      return`<div class="eco-card">
+        <div class="eco-name" style="color:${col}">${LABELS[r.eco_type]||r.eco_type}</div>
+        <div class="eco-wr" style="color:${col}">${wr}%</div>
+        <div class="eco-bar"><div class="eco-fill" style="width:${wr}%;background:${col}"></div></div>
+        <div class="eco-sub">${r.rounds} rounds · ADR ${r.avg_dmg}</div>
+      </div>`;
+    }).join('');
+    const noAnim={duration:0};
+    mkChart('cEcoWr',{type:'bar',data:{labels:sorted.map(r=>LABELS[r.eco_type]),
+      datasets:[{label:'Win%',data:sorted.map(r=>r.rounds?Math.round(r.wins/r.rounds*100):0),
+        backgroundColor:sorted.map(r=>COLS[r.eco_type]+'aa'),borderRadius:4,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x},y:{...SC.y,min:0,max:100}}}});
+    mkChart('cEcoAdr',{type:'bar',data:{labels:sorted.map(r=>LABELS[r.eco_type]),
+      datasets:[{label:'ADR',data:sorted.map(r=>+r.avg_dmg||0),
+        backgroundColor:sorted.map(r=>COLS[r.eco_type]+'aa'),borderRadius:4,borderColor:'transparent'}]},
+    options:{animation:firstLoad?{}:noAnim,plugins:{legend:{display:false},tooltip:TT},
+      scales:{x:{...SC.x},y:{...SC.y,min:0}}}});
+  }catch{}
+}
+
+// ── Steam ID manager ───────────────────────────────────────────────────────
+async function loadConfig(){
+  try{
+    const d=await fetch('/api/config').then(r=>r.json());
+    const ids=d.allowed_steam_ids||[];
+    $('sidWarn').style.display=ids.length===0?'block':'none';
+    $('sidOk').style.display=ids.length>0?'block':'none';
+    const list=$('sidList');
+    if(!ids.length){
+      list.innerHTML='<div class="sid-empty">Aucun Steam ID configuré — toutes les données sont acceptées</div>';
+      return;
+    }
+    list.innerHTML=ids.map(id=>`
+      <div class="sid-row">
+        <span class="sid-val">${id}</span>
+        <button class="sid-remove" onclick="removeSteamId('${id}')" title="Supprimer">✕</button>
+      </div>`).join('');
+  }catch{}
+}
+
+async function addSteamId(){
+  const val=$('sidInput').value.trim();
+  if(!val)return;
+  if(!/^\d{17}$/.test(val)){alert('Steam ID invalide — doit faire 17 chiffres (ex: 76561198XXXXXXXXX)');return}
+  await fetch('/api/config/add_id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({steam_id:val})});
+  $('sidInput').value='';
+  loadConfig();
+}
+
+async function removeSteamId(id){
+  if(!confirm(`Supprimer ${id} ?`))return;
+  await fetch('/api/config/remove_id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({steam_id:id})});
+  loadConfig();
+}
+
+$('sidInput').addEventListener('keydown',e=>{if(e.key==='Enter')addSteamId()});
+
+// ── Main load ──────────────────────────────────────────────────────────────
+async function loadAll(){
+  $('lastUpd').textContent=new Date().toLocaleTimeString('fr-FR');
+  await Promise.all([
+    loadStats(),loadPerf(),loadForm(),loadStreaks(),
+    loadMultikills(),loadMatches(),loadMaps(),
+    loadWeapons(),loadSides(),loadEconomy(),loadConfig()
+  ]);
+  disableAnimations();
+}
+
+// Live poll every 3s, full reload every 20s
+loadLive();loadAll();
+setInterval(loadLive, 3000);
+setInterval(()=>{loadAll();loadLive()}, 20000);
+</script>
+</body>
+</html>
